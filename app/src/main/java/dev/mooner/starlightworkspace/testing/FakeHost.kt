@@ -69,8 +69,9 @@ class FakeProject(
     @Volatile
     private var enabled: Boolean = true
 
+    /** As in StarLight, a project that isn't compiled is off. */
     override val isEnabled: Boolean
-        get() = enabled
+        get() = enabled && isCompiled
 
     @Volatile
     override var isCompiled: Boolean = false
@@ -96,9 +97,13 @@ class FakeProject(
         listeners.forEach { it(entry) }
     }
 
+    /** A failed compilation leaves the project not compiled, and so off, as in StarLight. */
     override fun compile() {
         log("compiling")
-        compileError?.let { throw it }
+        compileError?.let {
+            isCompiled = false
+            throw it
+        }
         isCompiled = true
     }
 

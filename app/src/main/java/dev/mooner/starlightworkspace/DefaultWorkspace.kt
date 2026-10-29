@@ -221,8 +221,11 @@ class DefaultWorkspace(
 
         override fun setEnabled(enabled: Boolean, actor: String) {
             if (!handle.setEnabled(enabled)) {
+                // A project that isn't compiled is always off, so turning it off has nothing to do.
+                if (!handle.isCompiled && !enabled)
+                    return
                 throw WorkspaceException(
-                    if (!handle.isCompiled) "Project '${handle.name}' is not compiled: compile it before turning it ${if (enabled) "on" else "off"}"
+                    if (!handle.isCompiled) "Project '${handle.name}' is not compiled: compile it before turning it on"
                     else "StarLight didn't turn project '${handle.name}' ${if (enabled) "on" else "off"}"
                 )
             }

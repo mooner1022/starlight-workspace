@@ -140,15 +140,23 @@ class DefaultWorkspaceTest {
     @Test
     fun turnsOnOnlyCompiledProjects() = runBlocking<Unit> {
         val project = workspace.project("bot")
-        bot.setEnabled(false)
+        // Not compiled: off, and only turning it on is refused.
+        assertFalse(project.summary.isEnabled)
         val refused = assertThrows(WorkspaceException::class.java) { project.setEnabled(true, "ide") }
         assertTrue(refused.message!!.contains("not compiled"))
+        project.setEnabled(false, "ide")
 
         project.compile("ide")
+        assertTrue(project.summary.isEnabled)
         project.setEnabled(false, "ide")
         assertFalse(project.summary.isEnabled)
         project.setEnabled(true, "ide")
         assertTrue(project.summary.isEnabled)
+
+        // A failed compilation turns it off.
+        bot.compileError = IllegalStateException("SyntaxError")
+        project.compile("ide")
+        assertFalse(project.summary.isEnabled)
     }
 
     @Test

@@ -67,7 +67,10 @@ interface WorkspaceProject {
     /** Compiles the project. A failed compilation is a result, not an exception. */
     suspend fun compile(actor: String): CompileResult
 
-    /** Turns the project on or off; StarLight refuses while the project isn't compiled. */
+    /**
+     * Turns the project on or off. A project that isn't compiled is always off (StarLight turns projects off when
+     * they fail to compile), so turning one on fails until it is compiled.
+     */
     fun setEnabled(enabled: Boolean, actor: String)
 
     /** Ids of the events the project receives, with wildcards expanded. */
@@ -96,6 +99,7 @@ class ProjectSummary(
     val languageId: String,
     /** Path of the main script, relative to the project directory. */
     val mainScript: String,
+    /** Never true while the project isn't compiled. */
     val isEnabled: Boolean,
     val isCompiled: Boolean,
     val activeJobs: Int,
