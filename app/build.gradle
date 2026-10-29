@@ -4,7 +4,7 @@ plugins {
     id 'io.github.mooner1022.slplugin'
 }
 
-def workspaceVersion = "1.0.1"
+def workspaceVersion = "1.0.2"
 
 android {
     namespace 'dev.mooner.starlightworkspace'
@@ -14,7 +14,7 @@ android {
         applicationId "dev.mooner.starlightworkspace"
         minSdk 26
         targetSdk 33
-        versionCode 2
+        versionCode 3
         // Used as the plugin version in starlight.json checks.
         versionName workspaceVersion
     }
