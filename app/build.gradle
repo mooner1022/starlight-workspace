@@ -1,0 +1,73 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'io.github.mooner1022.slplugin'
+}
+
+def workspaceVersion = "1.0.0"
+
+android {
+    namespace 'dev.mooner.starlightworkspace'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "dev.mooner.starlightworkspace"
+        minSdk 26
+        targetSdk 33
+        versionCode 1
+        // Used as the plugin version in starlight.json checks.
+        versionName workspaceVersion
+    }
+
+    buildTypes {
+        release {
+            // Dependent plugins load these classes by name.
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_11.toString()
+    }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+starlight {
+    sdk {
+        // Build these from the StarLight repository: ./gradlew :PluginCore:assembleRelease :ConfigDSL:assembleRelease
+        pluginCore = file("libs/PluginCore-release.aar")
+        configDsl = file("libs/ConfigDSL-release.aar")
+        excludeHostKotlinLibraries = true
+    }
+    deploy {
+        // Pass -Pstarlight.device=<serial or ip:port> or set STARLIGHT_DEVICE.
+        // Restarting force-stops StarLight on the device; opt in per run with -Pstarlight.restartApp=true.
+    }
+}
+
+// The classes dependent plugins compile against: copy the jar to their app/libs and declare it compileOnly.
+// It includes META-INF/*.kotlin_module, without which top-level functions don't resolve.
+tasks.register('apiJar', Jar) {
+    def compileKotlin = tasks.named('compileReleaseKotlin')
+    dependsOn compileKotlin
+    from(compileKotlin.flatMap { it.destinationDirectory })
+    archiveFileName = "workspace-api-${workspaceVersion}.jar"
+    destinationDirectory = layout.buildDirectory.dir("outputs/api")
+}
+
+dependencies {
+    // Provided by StarLight at runtime.
+    compileOnly "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0"
+
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0"
+    // Error locations of both script engines.
+    testImplementation "dev.mooner.neonjs:neonjs-core:0.1.5"
+    testImplementation "org.mozilla:rhino:1.7.15"
+}

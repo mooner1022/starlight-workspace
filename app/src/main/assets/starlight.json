@@ -1,0 +1,10 @@
+{
+  "id":"workspace",
+  "name":"Workspace",
+  "main_class":"dev.mooner.starlightworkspace.StarlightWorkspacePlugin",
+  "version":"1.0.0",
+  "api_version":"0.3.2",
+  "assetRevision":1,
+  "authors":["mooner"],
+  "description":"Shared access to StarLight projects (files, compiling, logs, debug room) for tool plugins such as MCP and IDE"
+}
