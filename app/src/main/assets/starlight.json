@@ -2,7 +2,7 @@
   "id":"workspace",
   "name":"Workspace",
   "main_class":"dev.mooner.starlightworkspace.StarlightWorkspacePlugin",
-  "version":"1.0.0",
+  "version":"1.0.1",
   "api_version":"0.3.2",
   "assetRevision":1,
   "authors":["mooner"],

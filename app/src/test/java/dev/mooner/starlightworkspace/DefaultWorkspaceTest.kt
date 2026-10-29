@@ -138,6 +138,20 @@ class DefaultWorkspaceTest {
     }
 
     @Test
+    fun turnsOnOnlyCompiledProjects() = runBlocking<Unit> {
+        val project = workspace.project("bot")
+        bot.setEnabled(false)
+        val refused = assertThrows(WorkspaceException::class.java) { project.setEnabled(true, "ide") }
+        assertTrue(refused.message!!.contains("not compiled"))
+
+        project.compile("ide")
+        project.setEnabled(false, "ide")
+        assertFalse(project.summary.isEnabled)
+        project.setEnabled(true, "ide")
+        assertTrue(project.summary.isEnabled)
+    }
+
+    @Test
     fun updatesEvents() {
         val project = workspace.project("bot")
         assertEquals(setOf(FakeHost.MESSAGE_EVENT), project.allowedEvents())
@@ -184,10 +198,10 @@ class DefaultWorkspaceTest {
         val changes = async(start = CoroutineStart.UNDISPATCHED) { workspace.changes.take(3).toList() }
         val project = workspace.project("bot")
         project.writeFile("a.js", "1", null, "ide")
-        project.setEnabled(false, "mcp")
         project.compile("ide")
+        project.setEnabled(false, "mcp")
         val received = withTimeout(5_000) { changes.await() }
-        assertEquals(listOf("FileWritten:ide", "EnabledChanged:mcp", "Compiled:ide"), received.map { "${it::class.simpleName}:${it.actor}" })
+        assertEquals(listOf("FileWritten:ide", "Compiled:ide", "EnabledChanged:mcp"), received.map { "${it::class.simpleName}:${it.actor}" })
         assertEquals("a.js", (received[0] as WorkspaceChange.FileWritten).path)
     }
 

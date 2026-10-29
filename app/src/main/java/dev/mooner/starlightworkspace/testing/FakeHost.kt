@@ -102,8 +102,12 @@ class FakeProject(
         isCompiled = true
     }
 
-    override fun setEnabled(enabled: Boolean) {
+    /** Refuses while not compiled, as StarLight does. */
+    override fun setEnabled(enabled: Boolean): Boolean {
+        if (!isCompiled)
+            return false
         this.enabled = enabled
+        return true
     }
 
     override fun allowedEvents(): Set<String> = allowed.toSet()

@@ -112,9 +112,8 @@ class SessionHost : StarlightHost {
             check(project.compile(true)) { "Compilation failed" }
         }
 
-        override fun setEnabled(enabled: Boolean) {
+        override fun setEnabled(enabled: Boolean): Boolean =
             project.setEnabled(enabled)
-        }
 
         override fun allowedEvents(): Set<String> =
             ProjectEventManager.filterAllowedEvents(project.info.allowedEventIds)

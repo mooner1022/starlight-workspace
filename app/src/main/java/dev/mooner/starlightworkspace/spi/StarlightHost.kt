@@ -47,7 +47,8 @@ interface ProjectHandle {
     /** Compiles the project; throws with the reason if it fails. */
     fun compile()
 
-    fun setEnabled(enabled: Boolean)
+    /** False if StarLight refused, as it does for projects that aren't compiled. */
+    fun setEnabled(enabled: Boolean): Boolean
 
     /** Ids of the allowed events, wildcards expanded. */
     fun allowedEvents(): Set<String>

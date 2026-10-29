@@ -51,6 +51,6 @@ StarLight는 의존성의 major.minor가 같으면 호환으로 봅니다.
 
 ```sh
 ./gradlew :app:assembleReleaseSlp   # app/build/outputs/starlight/release/workspace-release.slp
-./gradlew :app:apiJar               # app/build/outputs/api/workspace-api-1.0.0.jar
+./gradlew :app:apiJar               # app/build/outputs/api/workspace-api-1.0.1.jar
 ./gradlew :app:testReleaseUnitTest
 ```

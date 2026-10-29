@@ -220,7 +220,12 @@ class DefaultWorkspace(
         }
 
         override fun setEnabled(enabled: Boolean, actor: String) {
-            handle.setEnabled(enabled)
+            if (!handle.setEnabled(enabled)) {
+                throw WorkspaceException(
+                    if (!handle.isCompiled) "Project '${handle.name}' is not compiled: compile it before turning it ${if (enabled) "on" else "off"}"
+                    else "StarLight didn't turn project '${handle.name}' ${if (enabled) "on" else "off"}"
+                )
+            }
             emit(WorkspaceChange.EnabledChanged(handle.id, handle.isEnabled, actor))
         }
 
