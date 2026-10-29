@@ -44,6 +44,7 @@ override fun onEnable() {
 
 StarLight는 의존성의 major.minor가 같으면 호환으로 봅니다.
 - **하위 호환되는 추가:** patch를 올리고(1.0.x) `Workspaces.API_LEVEL`도 올립니다.
+  `WorkspaceChange`의 새 종류도 여기에 속하므로, 사용하는 플러그인은 `when`으로 나눌 때 반드시 `else`를 둡니다.
 - **호환을 깨는 변경:** minor 이상을 올리고, 사용하는 플러그인도 함께 다시 배포합니다.
 
 ## 빌드
