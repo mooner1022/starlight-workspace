@@ -170,6 +170,70 @@ class DefaultWorkspace(
             emit(WorkspaceChange.FileRenamed(handle.id, relative(source), relative(target), actor))
         }
 
+        override fun createDirectory(path: String, actor: String) {
+            val dir = resolve(path)
+            synchronized(fileLock) {
+                if (dir.exists() && !dir.isDirectory)
+                    throw WorkspaceException("A file is in the way: ${relative(dir)}")
+                if (!dir.isDirectory && !dir.mkdirs())
+                    throw WorkspaceException("Could not create ${relative(dir)}")
+            }
+        }
+
+        override fun deleteDirectory(path: String, actor: String) {
+            val dir = resolve(path)
+            if (dir == root)
+                throw WorkspaceException("The project directory itself can't be deleted")
+            val files = synchronized(fileLock) {
+                if (!dir.isDirectory)
+                    throw WorkspaceException("No such directory: $path")
+                val files = dir.walkTopDown().filter(File::isFile).map(::relative).toList()
+                if (!dir.deleteRecursively())
+                    throw WorkspaceException("Could not delete all of $path")
+                files
+            }
+            for (file in files)
+                emit(WorkspaceChange.FileDeleted(handle.id, file, actor))
+        }
+
+        override fun renameDirectory(from: String, to: String, actor: String) {
+            val source = resolve(from)
+            val target = resolve(to)
+            if (source == root)
+                throw WorkspaceException("The project directory itself can't be renamed")
+            val moved = synchronized(fileLock) {
+                if (!source.isDirectory)
+                    throw WorkspaceException("No such directory: $from")
+                if (target.exists())
+                    throw WorkspaceException("$to already exists")
+                if (target.path.startsWith(source.path + File.separator))
+                    throw WorkspaceException("Can't move $from into itself")
+                val files = source.walkTopDown().filter(File::isFile).map { it.relativeTo(source).invariantSeparatorsPath }.toList()
+                target.parentFile?.mkdirs()
+                if (!source.renameTo(target))
+                    throw WorkspaceException("Could not rename $from to $to")
+                files
+            }
+            val fromPath = relative(source)
+            val toPath = relative(target)
+            for (file in moved)
+                emit(WorkspaceChange.FileRenamed(handle.id, "$fromPath/$file", "$toPath/$file", actor))
+        }
+
+        override fun writeBytes(path: String, bytes: ByteArray, expectedHash: String?, actor: String): WrittenFile {
+            val file = resolve(path)
+            if (file == root || file.isDirectory)
+                throw WorkspaceException("Is a directory: $path")
+            val written = synchronized(fileLock) {
+                checkHash(file, expectedHash)
+                file.parentFile?.mkdirs()
+                file.writeBytes(bytes)
+                WrittenFile(relative(file), sha256Hex(bytes), bytes.size.toLong(), file.lastModified())
+            }
+            emit(WorkspaceChange.FileWritten(handle.id, written.path, written.hash, actor))
+            return written
+        }
+
         override fun search(query: String, isRegex: Boolean, ignoreCase: Boolean, limit: Int): List<SearchHit> {
             if (query.isEmpty())
                 throw WorkspaceException("Empty search")

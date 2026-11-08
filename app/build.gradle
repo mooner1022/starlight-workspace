@@ -68,6 +68,6 @@ dependencies {
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0"
     // Error locations of both script engines.
-    testImplementation "dev.mooner.neonjs:neonjs-core:0.1.5"
+    testImplementation "dev.mooner.neonjs:neonjs-core:0.1.7"
     testImplementation "org.mozilla:rhino:1.7.15"
 }

@@ -61,6 +61,38 @@ interface WorkspaceProject {
 
     fun renameFile(from: String, to: String, actor: String)
 
+    /**
+     * Creates the directory [path] with its parents; nothing happens if it is there. An empty directory reports no
+     * change, as there is no file to report.
+     *
+     * @since API level 2
+     */
+    fun createDirectory(path: String, actor: String)
+
+    /**
+     * Deletes the directory [path] with everything in it, reporting each deleted file as [WorkspaceChange.FileDeleted].
+     * The project directory itself can't be deleted.
+     *
+     * @since API level 2
+     */
+    fun deleteDirectory(path: String, actor: String)
+
+    /**
+     * Renames or moves the directory [from] to [to], with everything in it, reporting each moved file as
+     * [WorkspaceChange.FileRenamed]. [to] must not exist, nor be inside [from].
+     *
+     * @since API level 2
+     */
+    fun renameDirectory(from: String, to: String, actor: String)
+
+    /**
+     * Writes any file, such as an image, creating directories as needed. [expectedHash] works as in [writeFile]:
+     * empty means the file must not exist, null overwrites.
+     *
+     * @since API level 2
+     */
+    fun writeBytes(path: String, bytes: ByteArray, expectedHash: String?, actor: String): WrittenFile
+
     /** Lines matching [query] in text files, at most [limit]. */
     fun search(query: String, isRegex: Boolean, ignoreCase: Boolean, limit: Int): List<SearchHit>
 
@@ -117,6 +149,15 @@ class FileList(
     val entries: List<FileEntry>,
     /** Whether more files were left out by the limit. */
     val isTruncated: Boolean,
+)
+
+/** A file as written by [WorkspaceProject.writeBytes]. */
+class WrittenFile(
+    val path: String,
+    /** SHA-256 hex of the file's bytes. */
+    val hash: String,
+    val size: Long,
+    val modifiedMillis: Long,
 )
 
 class FileContent(

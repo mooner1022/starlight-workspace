@@ -7,7 +7,7 @@ object Workspaces {
      * Raised with every addition to the API. StarLight checks only the major and minor version of a dependency, so a
      * plugin built against a newer patch release checks this in its `onEnable`.
      */
-    const val API_LEVEL = 1
+    const val API_LEVEL = 2
 
     @Volatile
     private var instance: Workspace? = null

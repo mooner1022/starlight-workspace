@@ -72,6 +72,92 @@ class DefaultWorkspaceTest {
     }
 
     @Test
+    fun createsAndDeletesDirectories(): Unit = runBlocking {
+        val project = workspace.project("bot")
+        project.createDirectory("assets/img", "ide")
+        assertTrue(bot.directory.resolve("assets/img").isDirectory)
+        // Already there: nothing happens.
+        project.createDirectory("assets", "ide")
+        assertTrue("assets/img" in project.listFiles(".", 100).entries.filter { it.isDirectory }.map { it.path })
+        // A file in the way.
+        assertThrows(WorkspaceException::class.java) { project.createDirectory("bot.js", "ide") }
+        assertThrows(WorkspaceException::class.java) { project.createDirectory("../outside", "ide") }
+        assertFalse(folder.root.resolve("outside").exists())
+
+        project.writeFile("assets/img/a.txt", "a", null, "ide")
+        project.writeFile("assets/b.txt", "b", null, "ide")
+        val deleted = async(start = CoroutineStart.UNDISPATCHED) {
+            withTimeout(5.seconds) { workspace.changes.take(2).toList() }
+        }
+        project.deleteDirectory("assets", "ide")
+        assertFalse(bot.directory.resolve("assets").exists())
+        assertEquals(
+            listOf("assets/b.txt", "assets/img/a.txt"),
+            deleted.await().map { (it as WorkspaceChange.FileDeleted).path }.sorted(),
+        )
+        assertThrows(WorkspaceException::class.java) { project.deleteDirectory("assets", "ide") }
+        assertThrows(WorkspaceException::class.java) { project.deleteDirectory("bot.js", "ide") }
+    }
+
+    @Test
+    fun renamesDirectories(): Unit = runBlocking {
+        val project = workspace.project("bot")
+        project.writeFile("lib/sub/deep.js", "x", null, "ide")
+        val renamed = async(start = CoroutineStart.UNDISPATCHED) {
+            withTimeout(5.seconds) { workspace.changes.take(2).toList() }
+        }
+        project.renameDirectory("lib", "src/lib", "ide")
+        assertFalse(bot.directory.resolve("lib").exists())
+        assertEquals("export const a = 1;\n// TODO util", bot.directory.resolve("src/lib/util.js").readText())
+        assertEquals(
+            listOf("lib/sub/deep.js -> src/lib/sub/deep.js", "lib/util.js -> src/lib/util.js"),
+            renamed.await().map { it as WorkspaceChange.FileRenamed }.map { "${it.from} -> ${it.to}" }.sorted(),
+        )
+
+        project.createDirectory("empty", "ide")
+        project.renameDirectory("empty", "still-empty", "ide")
+        assertTrue(bot.directory.resolve("still-empty").isDirectory)
+
+        // Taken, into itself, the project directory, a file, and outside the project.
+        assertThrows(WorkspaceException::class.java) { project.renameDirectory("src", "still-empty", "ide") }
+        assertThrows(WorkspaceException::class.java) { project.renameDirectory("src", "src/inner", "ide") }
+        assertThrows(WorkspaceException::class.java) { project.renameDirectory(".", "moved", "ide") }
+        assertThrows(WorkspaceException::class.java) { project.renameDirectory("bot.js", "moved", "ide") }
+        assertThrows(WorkspaceException::class.java) { project.renameDirectory("src", "../src", "ide") }
+        assertTrue(bot.directory.resolve("src/lib/util.js").isFile)
+    }
+
+    @Test
+    fun neverDeletesTheProjectDirectory() {
+        val project = workspace.project("bot")
+        for (path in listOf("", ".", "lib/..", "./"))
+            assertThrows(path, WorkspaceException::class.java) { project.deleteDirectory(path, "ide") }
+        assertThrows(WorkspaceException::class.java) { project.deleteDirectory("..", "ide") }
+        assertTrue(bot.directory.resolve("bot.js").isFile)
+    }
+
+    @Test
+    fun writesBinaryFiles(): Unit = runBlocking {
+        val project = workspace.project("bot")
+        val bytes = byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte(), 0, -1)
+        val changed = async(start = CoroutineStart.UNDISPATCHED) { withTimeout(5.seconds) { workspace.changes.first() } }
+        val written = project.writeBytes("assets/logo.png", bytes, "", "ide")
+        assertEquals("assets/logo.png", written.path)
+        assertEquals(bytes.size.toLong(), written.size)
+        assertTrue(bytes.contentEquals(bot.directory.resolve("assets/logo.png").readBytes()))
+        val change = changed.await() as WorkspaceChange.FileWritten
+        assertEquals(written.hash, change.hash)
+
+        // An empty hash means the file must not exist yet; null overwrites.
+        assertThrows(ConflictException::class.java) { project.writeBytes("assets/logo.png", byteArrayOf(1), "", "ide") }
+        project.writeBytes("assets/logo.png", byteArrayOf(1), null, "ide")
+        assertEquals(1L, bot.directory.resolve("assets/logo.png").length())
+        assertThrows(WorkspaceException::class.java) { project.writeBytes("lib", byteArrayOf(1), null, "ide") }
+        assertThrows(WorkspaceException::class.java) { project.writeBytes("../evil.png", byteArrayOf(1), null, "ide") }
+        assertFalse(folder.root.resolve("evil.png").exists())
+    }
+
+    @Test
     fun detectsConflicts() {
         val project = workspace.project("bot")
         val read = project.readFile("bot.js")
