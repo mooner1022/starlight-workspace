@@ -13,18 +13,22 @@ MCP 서버, 웹 IDE 같은 도구 플러그인이 StarLight 프로젝트를 다�
 
 ## 사용하는 플러그인에서
 
-`starlight.json`:
+`app/build.gradle.kts`(jar는 이 저장소의 `./gradlew :app:apiJar` 결과물 `app/build/outputs/api/workspace-api-<버전>.jar`):
 
-```json
-"dependency": ["workspace@1.0.0"]
+```kotlin
+starlight {
+    manifest {
+        dependency("workspace", "1.0.0")
+    }
+}
+
+dependencies {
+    compileOnly(files("libs/workspace-api-1.0.3.jar"))
+    testImplementation(files("libs/workspace-api-1.0.3.jar"))
+}
 ```
 
-`app/build.gradle`(jar는 이 저장소의 `./gradlew :app:apiJar` 결과물 `app/build/outputs/api/workspace-api-<버전>.jar`):
-
-```groovy
-compileOnly files("libs/workspace-api-1.0.0.jar")
-testImplementation files("libs/workspace-api-1.0.0.jar")
-```
+`starlight.json`을 직접 쓴다면 `"dependency": ["workspace@1.0.0"]`입니다.
 
 ```kotlin
 override fun onEnable() {

@@ -12,10 +12,10 @@ dependencyResolutionManagement {
         mavenCentral()
         // NeonJS releases after 0.1.5, such as the 0.1.7 StarLight 1.1.0 ships, are published only here.
         maven {
-            url "https://mooner1022.github.io/neon-js/maven"
-            content { includeGroup "dev.mooner.neonjs" }
+            url = uri("https://mooner1022.github.io/neon-js/maven")
+            content { includeGroup("dev.mooner.neonjs") }
         }
     }
 }
-include ':app'
+include(":app")
 rootProject.name = "StarlightWorkspace"
